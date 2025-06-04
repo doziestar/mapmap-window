@@ -12,8 +12,30 @@
   "app": {
     "windows": [
       {
-        "title": "mapmap-window",
+        "label": "dashboard",
+        "title": "Dashboard",
         "width": 800,
+        "height": 600
+      },
+      {
+        "label": "daily-note",
+        "title": "Daily Note",
+        "visible": false,
+        "width": 500,
+        "height": 600
+      },
+      {
+        "label": "current-task",
+        "title": "Current Task",
+        "visible": false,
+        "width": 500,
+        "height": 400
+      },
+      {
+        "label": "flex",
+        "title": "Flex Window",
+        "visible": false,
+        "width": 600,
         "height": 600
       }
     ],
