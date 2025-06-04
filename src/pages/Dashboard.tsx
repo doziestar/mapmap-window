@@ -38,21 +38,21 @@ export default function Dashboard() {
           onClick={() => testShortcut("daily-note")}
           style={{ padding: "10px", fontSize: "16px" }}
         >
-          🗓️ Test Daily Note (Ctrl+Shift+D)
+          ��️ Test Daily Note (Cmd+Alt+Shift+D)
         </button>
 
         <button
           onClick={() => testShortcut("current-task")}
           style={{ padding: "10px", fontSize: "16px" }}
         >
-          ✅ Test Current Task (Ctrl+Shift+T)
+          ✅ Test Current Task (Cmd+Alt+Shift+T)
         </button>
 
         <button
           onClick={() => testShortcut("flex")}
           style={{ padding: "10px", fontSize: "16px" }}
         >
-          🪟 Test Flex Window (Ctrl+Shift+S)
+          �� Test Flex Window (Cmd+Alt+Shift+S)
         </button>
 
         <button
@@ -84,13 +84,13 @@ export default function Dashboard() {
             Try the keyboard shortcuts:
             <ul>
               <li>
-                <kbd>Ctrl+Shift+D</kbd> - Daily Note
+                <kbd>Cmd+Alt+Shift+D</kbd> - Daily Note
               </li>
               <li>
-                <kbd>Ctrl+Shift+T</kbd> - Current Task
+                <kbd>Cmd+Alt+Shift+T</kbd> - Current Task
               </li>
               <li>
-                <kbd>Ctrl+Shift+S</kbd> - Flex Window
+                <kbd>Cmd+Alt+Shift+S</kbd> - Flex Window
               </li>
             </ul>
           </li>

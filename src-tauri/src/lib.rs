@@ -5,6 +5,58 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[tauri::command]
+fn test_shortcut(app: AppHandle, shortcut_type: String) -> String {
+    println!("🧪 Testing shortcut: {}", shortcut_type);
+    
+    match shortcut_type.as_str() {
+        "daily-note" => {
+            open_or_focus(&app, "daily-note", "Daily Note");
+            "Daily Note window opened/focused".to_string()
+        },
+        "current-task" => {
+            open_or_focus(&app, "current-task", "Current Task");
+            "Current Task window opened/focused".to_string()
+        },
+        "flex" => {
+            open_or_focus(&app, "flex", "Flex Window");
+            "Flex window opened/focused".to_string()
+        },
+        _ => "Invalid shortcut type".to_string()
+    }
+}
+
+#[tauri::command]
+fn check_shortcuts_registered(app: AppHandle) -> String {
+    #[cfg(desktop)]
+    {
+        use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+        
+        let daily_note_shortcut = Shortcut::new(
+            Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
+            Code::KeyD
+        );
+        let current_task_shortcut = Shortcut::new(
+            Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
+            Code::KeyT
+        );
+        let flex_shortcut = Shortcut::new(
+            Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
+            Code::KeyS
+        );
+
+        let daily_registered = app.global_shortcut().is_registered(daily_note_shortcut);
+        let task_registered = app.global_shortcut().is_registered(current_task_shortcut);
+        let flex_registered = app.global_shortcut().is_registered(flex_shortcut);
+
+        format!("Daily Note: {}, Current Task: {}, Flex: {}", daily_registered, task_registered, flex_registered)
+    }
+    #[cfg(not(desktop))]
+    {
+        "Not available on mobile".to_string()
+    }
+}
+
 fn open_or_focus(app: &AppHandle, label: &str, title: &str) {
     println!("🔍 open_or_focus called for label: '{}', title: '{}'", label, title);
     
@@ -42,15 +94,15 @@ pub fn run() {
                 
                 // Define shortcuts once
                 let daily_note_shortcut = Shortcut::new(
-                    Some(Modifiers::CONTROL | Modifiers::ALT | Modifiers::SHIFT), 
+                    Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
                     Code::KeyD
                 );
                 let current_task_shortcut = Shortcut::new(
-                    Some(Modifiers::CONTROL | Modifiers::ALT | Modifiers::SHIFT), 
+                    Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
                     Code::KeyT
                 );
                 let flex_shortcut = Shortcut::new(
-                    Some(Modifiers::CONTROL | Modifiers::ALT | Modifiers::SHIFT), 
+                    Some(Modifiers::META | Modifiers::ALT | Modifiers::SHIFT), 
                     Code::KeyS
                 );
 
@@ -112,25 +164,25 @@ pub fn run() {
                 println!("📝 Registering global shortcuts...");
                 
                 match app.global_shortcut().register(daily_note_shortcut) {
-                    Ok(_) => println!("✅ Daily Note shortcut registered (Ctrl+Alt+Shift+D)"),
+                    Ok(_) => println!("✅ Daily Note shortcut registered (Cmd+Alt+Shift+D)"),
                     Err(e) => println!("❌ Failed to register Daily Note shortcut: {:?}", e),
                 }
                 
                 match app.global_shortcut().register(current_task_shortcut) {
-                    Ok(_) => println!("✅ Current Task shortcut registered (Ctrl+Alt+Shift+T)"),
+                    Ok(_) => println!("✅ Current Task shortcut registered (Cmd+Alt+Shift+T)"),
                     Err(e) => println!("❌ Failed to register Current Task shortcut: {:?}", e),
                 }
                 
                 match app.global_shortcut().register(flex_shortcut) {
-                    Ok(_) => println!("✅ Flex shortcut registered (Ctrl+Alt+Shift+S)"),
+                    Ok(_) => println!("✅ Flex shortcut registered (Cmd+Alt+Shift+S)"),
                     Err(e) => println!("❌ Failed to register Flex shortcut: {:?}", e),
                 }
                 
                 println!("🎉 Global shortcuts setup complete!");
                 println!("🔥 Try pressing:");
-                println!("   - Ctrl+Alt+Shift+D for Daily Note");
-                println!("   - Ctrl+Alt+Shift+T for Current Task");
-                println!("   - Ctrl+Alt+Shift+S for Flex");
+                println!("   - Cmd+Alt+Shift+D for Daily Note");
+                println!("   - Cmd+Alt+Shift+T for Current Task");
+                println!("   - Cmd+Alt+Shift+S for Flex");
             }
             Ok(())
         })
@@ -142,7 +194,7 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet, test_shortcut, check_shortcuts_registered])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
