@@ -1,4 +1,5 @@
 use tauri::{self, Manager, WebviewUrl, WebviewWindowBuilder, AppHandle};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -22,17 +23,17 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let handle = app.handle();
-            app.global_shortcut().register("CmdOrCtrl+Alt+Shift+D", move || {
+            app.global_shortcut().register(Shortcut::new("CmdOrCtrl+Alt+Shift+D")?, move || {
                 open_or_focus(&handle, "daily-note", "Daily Note");
             })?;
 
             let handle = app.handle();
-            app.global_shortcut().register("CmdOrCtrl+Alt+Shift+T", move || {
+            app.global_shortcut().register(Shortcut::new("CmdOrCtrl+Alt+Shift+T")?, move || {
                 open_or_focus(&handle, "current-task", "Current Task");
             })?;
 
             let handle = app.handle();
-            app.global_shortcut().register("CmdOrCtrl+Alt+Shift+S", move || {
+            app.global_shortcut().register(Shortcut::new("CmdOrCtrl+Alt+Shift+S")?, move || {
                 if handle.get_webview_window("flex").is_none() {
                     open_or_focus(&handle, "flex", "Flex Window");
                 } else if let Some(win) = handle.get_webview_window("flex") {
@@ -41,12 +42,13 @@ pub fn run() {
             })?;
             Ok(())
         })
-        .on_window_event(|event| {
-            if let tauri::WindowEvent::Destroyed = event.event() {
-                let label = event.window().label().to_string();
-                let _ = event.window().app_handle().emit_all("window-closed", label);
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                let label = window.label().to_string();
+                let _ = window.app_handle().emit_all("window-closed", label);
             }
         })
+        .plugin(tauri_plugin_global_shortcut::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
