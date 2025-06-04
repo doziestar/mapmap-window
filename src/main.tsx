@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Dashboard, DailyNote, CurrentTask, Flex } from "./pages";
 
 const components: Record<string, React.FC> = {
@@ -10,7 +10,8 @@ const components: Record<string, React.FC> = {
   flex: Flex,
 };
 
-const label = appWindow.label;
+const currentWindow = getCurrentWebviewWindow();
+const label = currentWindow.label;
 const Component = components[label] ?? Dashboard;
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
