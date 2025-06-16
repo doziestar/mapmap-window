@@ -1,0 +1,196 @@
+{
+  "windows": [
+    {
+      "id": "daily-note",
+      "title": "Daily Note",
+      "description": "Daily journaling and note-taking",
+      "emoji": "📝",
+      "category": "productivity",
+      "width": 500,
+      "height": 600,
+      "position": { "x": 100, "y": 100 },
+      "shortcut": "D",
+      "component": "daily-note"
+    },
+    {
+      "id": "current-task",
+      "title": "Current Task",
+      "description": "Task management and tracking",
+      "emoji": "✅",
+      "category": "productivity",
+      "width": 500,
+      "height": 400,
+      "position": { "x": 150, "y": 150 },
+      "shortcut": "T",
+      "component": "current-task"
+    },
+    {
+      "id": "flex-workspace",
+      "title": "Flex Workspace",
+      "description": "Multi-tool workspace with notes, calculator, timer",
+      "emoji": "🎯",
+      "category": "tools",
+      "width": 600,
+      "height": 600,
+      "position": { "x": 200, "y": 200 },
+      "shortcut": "S",
+      "component": "flex"
+    },
+    {
+      "id": "flex-code",
+      "title": "Code Scratchpad",
+      "description": "Quick code snippets and experiments",
+      "emoji": "💻",
+      "category": "development",
+      "width": 700,
+      "height": 500,
+      "position": { "x": 250, "y": 250 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "code",
+        "defaultTab": "editor"
+      }
+    },
+    {
+      "id": "flex-research",
+      "title": "Research Hub",
+      "description": "Research notes, links, and references",
+      "emoji": "🔬",
+      "category": "research",
+      "width": 650,
+      "height": 550,
+      "position": { "x": 300, "y": 300 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "research",
+        "defaultTab": "notes"
+      }
+    },
+    {
+      "id": "flex-meeting",
+      "title": "Meeting Notes",
+      "description": "Meeting agenda, notes, and action items",
+      "emoji": "👥",
+      "category": "meetings",
+      "width": 580,
+      "height": 650,
+      "position": { "x": 350, "y": 150 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "meeting",
+        "defaultTab": "agenda"
+      }
+    },
+    {
+      "id": "flex-brainstorm",
+      "title": "Brainstorm Board",
+      "description": "Ideas, mind mapping, and creative thinking",
+      "emoji": "💡",
+      "category": "creativity",
+      "width": 750,
+      "height": 600,
+      "position": { "x": 100, "y": 300 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "brainstorm",
+        "defaultTab": "ideas"
+      }
+    },
+    {
+      "id": "flex-focus",
+      "title": "Focus Station",
+      "description": "Pomodoro timer, focus music, and distraction blocker",
+      "emoji": "🎯",
+      "category": "productivity",
+      "width": 450,
+      "height": 500,
+      "position": { "x": 400, "y": 100 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "focus",
+        "defaultTab": "timer"
+      }
+    },
+    {
+      "id": "flex-quick",
+      "title": "Quick Tools",
+      "description": "Calculator, unit converter, and quick utilities",
+      "emoji": "⚡",
+      "category": "tools",
+      "width": 400,
+      "height": 450,
+      "position": { "x": 450, "y": 350 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "tools",
+        "defaultTab": "calculator"
+      }
+    },
+    {
+      "id": "flex-monitor",
+      "title": "System Monitor",
+      "description": "System stats, performance metrics, and monitoring",
+      "emoji": "📊",
+      "category": "system",
+      "width": 550,
+      "height": 400,
+      "position": { "x": 200, "y": 450 },
+      "shortcut": null,
+      "component": "flex",
+      "config": {
+        "theme": "monitor",
+        "defaultTab": "stats"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "productivity",
+      "name": "Productivity",
+      "color": "#007acc",
+      "description": "Task management and productivity tools"
+    },
+    {
+      "id": "development",
+      "name": "Development",
+      "color": "#28a745",
+      "description": "Code editing and development tools"
+    },
+    {
+      "id": "research",
+      "name": "Research",
+      "color": "#6f42c1",
+      "description": "Research and knowledge management"
+    },
+    {
+      "id": "meetings",
+      "name": "Meetings",
+      "color": "#fd7e14",
+      "description": "Meeting management and collaboration"
+    },
+    {
+      "id": "creativity",
+      "name": "Creativity",
+      "color": "#e83e8c",
+      "description": "Creative thinking and ideation"
+    },
+    {
+      "id": "tools",
+      "name": "Tools",
+      "color": "#20c997",
+      "description": "Utility tools and calculators"
+    },
+    {
+      "id": "system",
+      "name": "System",
+      "color": "#6c757d",
+      "description": "System monitoring and administration"
+    }
+  ]
+}

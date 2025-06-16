@@ -7,7 +7,11 @@ interface Task {
   priority: "low" | "medium" | "high";
 }
 
-export default function CurrentTask() {
+interface CurrentTaskProps {
+  config?: any;
+}
+
+export default function CurrentTask({ config }: CurrentTaskProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");

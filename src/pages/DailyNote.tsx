@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 
-export default function DailyNote() {
+interface DailyNoteProps {
+  config?: any;
+}
+
+export default function DailyNote({ config }: DailyNoteProps) {
   const [notes, setNotes] = useState<string>("");
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",

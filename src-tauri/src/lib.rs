@@ -1,4 +1,54 @@
 use tauri::{self, Manager, WebviewUrl, WebviewWindowBuilder, AppHandle, EventTarget, Emitter, Position, PhysicalPosition, PhysicalSize};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct WindowPosition {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct WindowConfig {
+    theme: Option<String>,
+    #[serde(rename = "defaultTab")]
+    default_tab: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct WindowDefinition {
+    id: String,
+    title: String,
+    description: String,
+    emoji: String,
+    category: String,
+    width: u32,
+    height: u32,
+    position: WindowPosition,
+    shortcut: Option<String>,
+    component: String,
+    config: Option<WindowConfig>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct WindowCategory {
+    id: String,
+    name: String,
+    color: String,
+    description: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WindowsConfig {
+    windows: Vec<WindowDefinition>,
+    categories: Vec<WindowCategory>,
+}
+
+fn load_windows_config() -> Result<WindowsConfig, Box<dyn std::error::Error>> {
+    let config_str = include_str!("../windows.json");
+    let config: WindowsConfig = serde_json::from_str(config_str)?;
+    Ok(config)
+}
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -6,24 +56,27 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
+fn get_available_windows() -> Result<WindowsConfig, String> {
+    match load_windows_config() {
+        Ok(config) => Ok(config),
+        Err(e) => Err(format!("Failed to load windows config: {}", e)),
+    }
+}
+
+#[tauri::command]
 fn test_shortcut(app: AppHandle, shortcut_type: String) -> String {
     println!("🧪 Testing shortcut: {}", shortcut_type);
     
-    match shortcut_type.as_str() {
-        "daily-note" => {
-            open_or_focus(&app, "daily-note");
-            "Daily Note window opened/focused".to_string()
-        },
-        "current-task" => {
-            open_or_focus(&app, "current-task");
-            "Current Task window opened/focused".to_string()
-        },
-        "flex" => {
-            open_or_focus(&app, "flex");
-            "Flex window opened/focused".to_string()
-        },
-        _ => "Invalid shortcut type".to_string()
-    }
+    // Map old shortcut types to new window IDs for backward compatibility
+    let window_id = match shortcut_type.as_str() {
+        "daily-note" => "daily-note",
+        "current-task" => "current-task", 
+        "flex" => "flex-workspace",
+        _ => &shortcut_type,
+    };
+    
+    open_or_focus(&app, window_id);
+    format!("Window '{}' opened/focused", window_id)
 }
 
 #[tauri::command]
@@ -58,10 +111,10 @@ fn check_shortcuts_registered(app: AppHandle) -> String {
 }
 
 #[tauri::command]
-fn create_window(app: AppHandle, window_type: String) -> String {
-    println!("🆕 Creating window of type: {}", window_type);
-    open_or_focus(&app, &window_type);
-    format!("Window '{}' created/focused", window_type)
+fn create_window(app: AppHandle, window_id: String) -> String {
+    println!("🆕 Creating window with ID: {}", window_id);
+    open_or_focus(&app, &window_id);
+    format!("Window '{}' created/focused", window_id)
 }
 
 #[tauri::command] 
@@ -95,49 +148,71 @@ fn get_open_windows(app: AppHandle) -> Vec<String> {
     windows
 }
 
-fn get_window_config(window_type: &str) -> (String, PhysicalSize<u32>, Option<PhysicalPosition<i32>>) {
-    match window_type {
-        "daily-note" => (
-            "Daily Note".to_string(),
-            PhysicalSize::new(500, 600),
-            Some(PhysicalPosition::new(100, 100))
-        ),
-        "current-task" => (
-            "Current Task".to_string(), 
-            PhysicalSize::new(500, 400),
-            Some(PhysicalPosition::new(150, 150))
-        ),
-        "flex" => (
-            "Flex Window".to_string(),
-            PhysicalSize::new(600, 600), 
-            Some(PhysicalPosition::new(200, 200))
-        ),
-        _ => (
-            format!("Window ({})", window_type),
+fn find_window_definition(window_id: &str) -> Option<WindowDefinition> {
+    match load_windows_config() {
+        Ok(config) => {
+            config.windows.into_iter().find(|w| w.id == window_id)
+        },
+        Err(e) => {
+            println!("❌ Failed to load windows config: {}", e);
+            None
+        }
+    }
+}
+
+fn get_window_config_from_json(window_id: &str) -> (String, PhysicalSize<u32>, Option<PhysicalPosition<i32>>) {
+    if let Some(window_def) = find_window_definition(window_id) {
+        (
+            window_def.title,
+            PhysicalSize::new(window_def.width, window_def.height),
+            Some(PhysicalPosition::new(window_def.position.x, window_def.position.y))
+        )
+    } else {
+        // Fallback for unknown window types
+        println!("⚠️ Window definition not found for '{}', using fallback", window_id);
+        (
+            format!("Window ({})", window_id),
             PhysicalSize::new(500, 500),
             Some(PhysicalPosition::new(250, 250))
         )
     }
 }
 
-fn open_or_focus(app: &AppHandle, window_type: &str) {
-    println!("🔍 open_or_focus called for window type: '{}'", window_type);
+fn open_or_focus(app: &AppHandle, window_id: &str) {
+    println!("🔍 open_or_focus called for window ID: '{}'", window_id);
     
-    if let Some(win) = app.get_webview_window(window_type) {
-        println!("✅ Found existing window '{}', showing and focusing", window_type);
+    if let Some(win) = app.get_webview_window(window_id) {
+        println!("✅ Found existing window '{}', showing and focusing", window_id);
         match win.show() {
-            Ok(_) => println!("✅ Successfully showed window '{}'", window_type),
-            Err(e) => println!("❌ Failed to show window '{}': {:?}", window_type, e),
+            Ok(_) => println!("✅ Successfully showed window '{}'", window_id),
+            Err(e) => println!("❌ Failed to show window '{}': {:?}", window_id, e),
         }
         match win.set_focus() {
-            Ok(_) => println!("✅ Successfully focused window '{}'", window_type),
-            Err(e) => println!("❌ Failed to focus window '{}': {:?}", window_type, e),
+            Ok(_) => println!("✅ Successfully focused window '{}'", window_id),
+            Err(e) => println!("❌ Failed to focus window '{}': {:?}", window_id, e),
         }
     } else {
-        let (title, size, position) = get_window_config(window_type);
-        println!("🆕 Creating new window '{}' with title '{}', size: {:?}", window_type, title, size);
+        let (title, size, position) = get_window_config_from_json(window_id);
+        println!("🆕 Creating new window '{}' with title '{}', size: {:?}", window_id, title, size);
         
-        let mut builder = WebviewWindowBuilder::new(app, window_type, WebviewUrl::App("index.html".into()))
+        // Build the URL with window configuration
+        let mut url = "index.html".to_string();
+        if let Some(window_def) = find_window_definition(window_id) {
+            if let Some(config) = window_def.config {
+                let mut query_params = Vec::new();
+                if let Some(theme) = config.theme {
+                    query_params.push(format!("theme={}", theme));
+                }
+                if let Some(default_tab) = config.default_tab {
+                    query_params.push(format!("defaultTab={}", default_tab));
+                }
+                if !query_params.is_empty() {
+                    url = format!("{}?{}", url, query_params.join("&"));
+                }
+            }
+        }
+        
+        let mut builder = WebviewWindowBuilder::new(app, window_id, WebviewUrl::App(url.into()))
             .title(&title)
             .inner_size(size.width as f64, size.height as f64)
             .resizable(true)
@@ -150,13 +225,13 @@ fn open_or_focus(app: &AppHandle, window_type: &str) {
         
         match builder.build() {
             Ok(window) => {
-                println!("✅ Successfully created window '{}'", window_type);
+                println!("✅ Successfully created window '{}'", window_id);
                 // Auto-focus the new window
                 if let Err(e) = window.set_focus() {
-                    println!("⚠️ Warning: Failed to focus new window '{}': {:?}", window_type, e);
+                    println!("⚠️ Warning: Failed to focus new window '{}': {:?}", window_id, e);
                 }
             },
-            Err(e) => println!("❌ Failed to create window '{}': {:?}", window_type, e),
+            Err(e) => println!("❌ Failed to create window '{}': {:?}", window_id, e),
         }
     }
 }
@@ -213,7 +288,7 @@ pub fn run() {
                                 open_or_focus(&handle, "current-task");
                             } else if shortcut == &flex_shortcut_handler {
                                 println!("🎯 MATCHED Flex shortcut!");
-                                open_or_focus(&handle, "flex");
+                                open_or_focus(&handle, "flex-workspace");
                             } else {
                                 println!("❌ NO MATCH for shortcut: {:?}", shortcut);
                                 println!("   Expected daily note: {:?}", daily_note_shortcut_handler);
@@ -252,7 +327,7 @@ pub fn run() {
                 println!("🔥 Try pressing:");
                 println!("   - Cmd+Alt+Shift+D for Daily Note");
                 println!("   - Cmd+Alt+Shift+T for Current Task");
-                println!("   - Cmd+Alt+Shift+S for Flex");
+                println!("   - Cmd+Alt+Shift+S for Flex Workspace");
             }
             Ok(())
         })
@@ -270,7 +345,8 @@ pub fn run() {
             check_shortcuts_registered,
             create_window,
             close_window,
-            get_open_windows
+            get_open_windows,
+            get_available_windows
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
