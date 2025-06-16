@@ -1,4 +1,4 @@
-use tauri::{self, Manager, WebviewUrl, WebviewWindowBuilder, AppHandle, EventTarget, Emitter};
+use tauri::{self, Manager, WebviewUrl, WebviewWindowBuilder, AppHandle, EventTarget, Emitter, Position, PhysicalPosition, PhysicalSize};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -11,15 +11,15 @@ fn test_shortcut(app: AppHandle, shortcut_type: String) -> String {
     
     match shortcut_type.as_str() {
         "daily-note" => {
-            open_or_focus(&app, "daily-note", "Daily Note");
+            open_or_focus(&app, "daily-note");
             "Daily Note window opened/focused".to_string()
         },
         "current-task" => {
-            open_or_focus(&app, "current-task", "Current Task");
+            open_or_focus(&app, "current-task");
             "Current Task window opened/focused".to_string()
         },
         "flex" => {
-            open_or_focus(&app, "flex", "Flex Window");
+            open_or_focus(&app, "flex");
             "Flex window opened/focused".to_string()
         },
         _ => "Invalid shortcut type".to_string()
@@ -57,27 +57,106 @@ fn check_shortcuts_registered(app: AppHandle) -> String {
     }
 }
 
-fn open_or_focus(app: &AppHandle, label: &str, title: &str) {
-    println!("🔍 open_or_focus called for label: '{}', title: '{}'", label, title);
+#[tauri::command]
+fn create_window(app: AppHandle, window_type: String) -> String {
+    println!("🆕 Creating window of type: {}", window_type);
+    open_or_focus(&app, &window_type);
+    format!("Window '{}' created/focused", window_type)
+}
+
+#[tauri::command] 
+fn close_window(app: AppHandle, window_label: String) -> String {
+    println!("🗑️ Closing window: {}", window_label);
     
-    if let Some(win) = app.get_webview_window(label) {
-        println!("✅ Found existing window '{}', showing and focusing", label);
-        match win.show() {
-            Ok(_) => println!("✅ Successfully showed window '{}'", label),
-            Err(e) => println!("❌ Failed to show window '{}': {:?}", label, e),
-        }
-        match win.set_focus() {
-            Ok(_) => println!("✅ Successfully focused window '{}'", label),
-            Err(e) => println!("❌ Failed to focus window '{}': {:?}", label, e),
+    if let Some(window) = app.get_webview_window(&window_label) {
+        match window.close() {
+            Ok(_) => {
+                println!("✅ Successfully closed window '{}'", window_label);
+                format!("Window '{}' closed", window_label)
+            },
+            Err(e) => {
+                println!("❌ Failed to close window '{}': {:?}", window_label, e);
+                format!("Failed to close window '{}': {:?}", window_label, e)
+            }
         }
     } else {
-        println!("🆕 Creating new window '{}' with title '{}'", label, title);
-        match WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
-            .title(title)
-            .build()
-        {
-            Ok(_) => println!("✅ Successfully created window '{}'", label),
-            Err(e) => println!("❌ Failed to create window '{}': {:?}", label, e),
+        println!("❌ Window '{}' not found", window_label);
+        format!("Window '{}' not found", window_label)
+    }
+}
+
+#[tauri::command]
+fn get_open_windows(app: AppHandle) -> Vec<String> {
+    let windows: Vec<String> = app.webview_windows()
+        .iter()
+        .map(|(label, _)| label.clone())
+        .collect();
+    println!("📋 Open windows: {:?}", windows);
+    windows
+}
+
+fn get_window_config(window_type: &str) -> (String, PhysicalSize<u32>, Option<PhysicalPosition<i32>>) {
+    match window_type {
+        "daily-note" => (
+            "Daily Note".to_string(),
+            PhysicalSize::new(500, 600),
+            Some(PhysicalPosition::new(100, 100))
+        ),
+        "current-task" => (
+            "Current Task".to_string(), 
+            PhysicalSize::new(500, 400),
+            Some(PhysicalPosition::new(150, 150))
+        ),
+        "flex" => (
+            "Flex Window".to_string(),
+            PhysicalSize::new(600, 600), 
+            Some(PhysicalPosition::new(200, 200))
+        ),
+        _ => (
+            format!("Window ({})", window_type),
+            PhysicalSize::new(500, 500),
+            Some(PhysicalPosition::new(250, 250))
+        )
+    }
+}
+
+fn open_or_focus(app: &AppHandle, window_type: &str) {
+    println!("🔍 open_or_focus called for window type: '{}'", window_type);
+    
+    if let Some(win) = app.get_webview_window(window_type) {
+        println!("✅ Found existing window '{}', showing and focusing", window_type);
+        match win.show() {
+            Ok(_) => println!("✅ Successfully showed window '{}'", window_type),
+            Err(e) => println!("❌ Failed to show window '{}': {:?}", window_type, e),
+        }
+        match win.set_focus() {
+            Ok(_) => println!("✅ Successfully focused window '{}'", window_type),
+            Err(e) => println!("❌ Failed to focus window '{}': {:?}", window_type, e),
+        }
+    } else {
+        let (title, size, position) = get_window_config(window_type);
+        println!("🆕 Creating new window '{}' with title '{}', size: {:?}", window_type, title, size);
+        
+        let mut builder = WebviewWindowBuilder::new(app, window_type, WebviewUrl::App("index.html".into()))
+            .title(&title)
+            .inner_size(size.width as f64, size.height as f64)
+            .resizable(true)
+            .focused(true)
+            .center();
+
+        if let Some(pos) = position {
+            builder = builder.position(pos.x as f64, pos.y as f64);
+        }
+        
+        match builder.build() {
+            Ok(window) => {
+                println!("✅ Successfully created window '{}'", window_type);
+                // Auto-focus the new window
+                if let Err(e) = window.set_focus() {
+                    println!("⚠️ Warning: Failed to focus new window '{}': {:?}", window_type, e);
+                }
+            },
+            Err(e) => println!("❌ Failed to create window '{}': {:?}", window_type, e),
         }
     }
 }
@@ -128,22 +207,13 @@ pub fn run() {
                             
                             if shortcut == &daily_note_shortcut_handler {
                                 println!("🎯 MATCHED Daily Note shortcut!");
-                                open_or_focus(&handle, "daily-note", "Daily Note");
+                                open_or_focus(&handle, "daily-note");
                             } else if shortcut == &current_task_shortcut_handler {
                                 println!("🎯 MATCHED Current Task shortcut!");
-                                open_or_focus(&handle, "current-task", "Current Task");
+                                open_or_focus(&handle, "current-task");
                             } else if shortcut == &flex_shortcut_handler {
                                 println!("🎯 MATCHED Flex shortcut!");
-                                if handle.get_webview_window("flex").is_none() {
-                                    println!("🆕 Creating new flex window");
-                                    open_or_focus(&handle, "flex", "Flex Window");
-                                } else if let Some(win) = handle.get_webview_window("flex") {
-                                    println!("🔍 Focusing existing flex window");
-                                    match win.set_focus() {
-                                        Ok(_) => println!("✅ Flex window focused"),
-                                        Err(e) => println!("❌ Failed to focus flex window: {:?}", e),
-                                    }
-                                }
+                                open_or_focus(&handle, "flex");
                             } else {
                                 println!("❌ NO MATCH for shortcut: {:?}", shortcut);
                                 println!("   Expected daily note: {:?}", daily_note_shortcut_handler);
@@ -194,7 +264,14 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, test_shortcut, check_shortcuts_registered])
+        .invoke_handler(tauri::generate_handler![
+            greet, 
+            test_shortcut, 
+            check_shortcuts_registered,
+            create_window,
+            close_window,
+            get_open_windows
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
